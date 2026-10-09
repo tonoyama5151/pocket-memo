@@ -66,6 +66,20 @@ object MemoImages {
         null
     }
 
+    /** Copies a stored photo for a duplicated memo. Patterns and "" are returned as they are. */
+    fun copy(context: Context, name: String, newMemoId: String): String {
+        if (name.isEmpty() || Backgrounds.isPattern(name)) return name
+        val src = file(context, name)
+        if (!src.exists()) return ""
+        val target = "$newMemoId-${System.currentTimeMillis()}.jpg"
+        return try {
+            src.copyTo(file(context, target))
+            target
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
     /** The stored photo as saved, before any brightness adjustment. */
     fun loadRaw(context: Context, name: String): Bitmap? {
         if (name.isEmpty() || Backgrounds.isPattern(name)) return null

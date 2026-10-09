@@ -31,7 +31,10 @@ class StickyWidget : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         val edit = prefs(context).edit()
-        appWidgetIds.forEach { edit.remove(key(it)) }
+        appWidgetIds.forEach {
+            edit.remove(key(it))
+            edit.remove(sizeKey(it))
+        }
         edit.apply()
     }
 
@@ -43,10 +46,33 @@ class StickyWidget : AppWidgetProvider() {
         private const val MAX_PIXELS = 512f * 512f
 
         private fun key(widgetId: Int) = "w_$widgetId"
+        private fun sizeKey(widgetId: Int) = "s_$widgetId"
         private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-        fun bind(context: Context, widgetId: Int, memoId: String) {
-            prefs(context).edit().putString(key(widgetId), memoId).apply()
+        fun bind(context: Context, widgetId: Int, memoId: String, size: String? = null) {
+            val p = prefs(context)
+            val edit = p.edit().putString(key(widgetId), memoId)
+            if (size != null) edit.putString(sizeKey(widgetId), size)
+            else if (!p.contains(sizeKey(widgetId))) edit.putString(sizeKey(widgetId), "m")
+            edit.apply()
+            update(context, AppWidgetManager.getInstance(context), widgetId)
+        }
+
+        /** Sticky notes currently showing this memo, in the order they were placed. */
+        fun widgetsFor(context: Context, memoId: String): List<Int> {
+            val manager = AppWidgetManager.getInstance(context)
+            val p = prefs(context)
+            return manager.getAppWidgetIds(ComponentName(context, StickyWidget::class.java))
+                .filter { p.getString(key(it), null) == memoId }
+                .sorted()
+        }
+
+        /** Text size of one sticky note: "s", "m" or "l". */
+        fun sizeOf(context: Context, widgetId: Int, fallback: String = "m"): String =
+            prefs(context).getString(sizeKey(widgetId), null) ?: fallback
+
+        fun setSize(context: Context, widgetId: Int, size: String) {
+            prefs(context).edit().putString(sizeKey(widgetId), size).apply()
             update(context, AppWidgetManager.getInstance(context), widgetId)
         }
 
@@ -81,7 +107,8 @@ class StickyWidget : AppWidgetProvider() {
                 views.setInt(ROOT, "setBackgroundResource", MemoFormat.noteBackground(memo.color))
 
                 val textColor = Backgrounds.textColor(memo.textColor)
-                val (titleSp, bodySp) = MemoFormat.textSizes(memo.textSize)
+                // Older notes had no size of their own; they keep the memo's earlier setting.
+                val (titleSp, bodySp) = MemoFormat.textSizes(sizeOf(context, widgetId, memo.textSize))
                 val title = memo.title.trim()
                 views.setViewVisibility(R.id.w_title, if (title.isEmpty()) View.GONE else View.VISIBLE)
                 views.setTextViewText(R.id.w_title, title)

@@ -54,7 +54,6 @@ object Backgrounds {
         "yellow" -> 0xFFC9921A.toInt()
         "green" -> 0xFF3C8F5A.toInt()
         "blue" -> 0xFF3B6FD0.toInt()
-        "" -> 0xFFB48A2C.toInt()
         else -> 0xFF24427F.toInt()
     }
 
@@ -63,7 +62,7 @@ object Backgrounds {
         "yellow" -> 0xFFFFE27A.toInt()
         "green" -> 0xFFCFEBD6.toInt()
         "blue" -> 0xFFD3E1F7.toInt()
-        "" -> 0xFFFFF3B8.toInt()
+        "" -> 0xFFFFFFFF.toInt()
         else -> 0xFFFAFAF7.toInt()
     }
 

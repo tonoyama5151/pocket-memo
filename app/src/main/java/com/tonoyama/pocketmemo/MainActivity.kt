@@ -56,7 +56,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        adapter = MemoAdapter(showSections = true) { memo ->
+        adapter = MemoAdapter(
+            showSections = true,
+            onLongClick = { memo, view -> showMemoMenu(memo, view) },
+        ) { memo ->
             startActivity(EditorActivity.intent(this, memo.id))
         }
         val list = findViewById<RecyclerView>(R.id.list)
@@ -88,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         menu.menu.add(0, 1, 0, "ゴミ箱")
         menu.menu.add(0, 2, 1, "バックアップを書き出す")
         menu.menu.add(0, 3, 2, "バックアップから読み込む")
+        menu.menu.add(0, 4, 3, "表示テーマ")
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> startActivity(Intent(this, TrashActivity::class.java))
@@ -103,6 +107,43 @@ class MainActivity : AppCompatActivity() {
                         importLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
                     }
                     .show()
+                4 -> chooseTheme()
+            }
+            true
+        }
+        menu.show()
+    }
+
+    private fun chooseTheme() {
+        val current = Theme.OPTIONS.indexOfFirst { it.first == Theme.get(this) }.coerceAtLeast(0)
+        MaterialAlertDialogBuilder(this)
+            .setTitle("表示テーマ")
+            .setSingleChoiceItems(Theme.OPTIONS.map { it.second }.toTypedArray(), current) { dialog, which ->
+                dialog.dismiss()
+                Theme.set(this, Theme.OPTIONS[which].first)
+            }
+            .setNegativeButton("閉じる", null)
+            .show()
+    }
+
+    /** Long-press menu on a memo in the list. */
+    private fun showMemoMenu(memo: Memo, anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        menu.menu.add(0, 1, 0, "テキストをコピー")
+        menu.menu.add(0, 2, 1, "複製を作る")
+        menu.menu.add(0, 3, 2, "共有")
+        menu.menu.add(0, 4, 3, "ゴミ箱に移す")
+        menu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> MemoActions.copyText(this, memo)
+                2 -> MemoActions.duplicate(this, memo)
+                3 -> MemoActions.share(this, memo)
+                4 -> {
+                    MemoStore.moveToTrash(this, memo.id)
+                    StickyWidget.updateAll(this)
+                    refresh()
+                    Toast.makeText(this, "ゴミ箱に移しました", Toast.LENGTH_SHORT).show()
+                }
             }
             true
         }

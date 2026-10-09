@@ -26,6 +26,7 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
@@ -137,14 +138,14 @@ class EditorActivity : AppCompatActivity() {
             Toast.makeText(this, if (memo.pinned) "ピン留めしました" else "ピン留めを外しました", Toast.LENGTH_SHORT).show()
         }
         findViewById<ImageButton>(R.id.sticky).setOnClickListener { pinToHomeScreen() }
-        findViewById<ImageButton>(R.id.share).setOnClickListener { share() }
+        val more = findViewById<ImageButton>(R.id.more)
+        more.setOnClickListener { showMoreMenu(more) }
         findViewById<ImageButton>(R.id.mode).setOnClickListener { toggleMode() }
         findViewById<MaterialButton>(R.id.addItem).setOnClickListener {
             memo.items = memo.items + CheckItem.create()
             onEdited()
             rebuildChecklist(focusIndex = memo.items.size - 1)
         }
-        findViewById<ImageButton>(R.id.delete).setOnClickListener { confirmDelete() }
         bgPick.setOnClickListener {
             pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
@@ -176,6 +177,7 @@ class EditorActivity : AppCompatActivity() {
             if (value != memo.textSize) {
                 memo.textSize = value
                 memo.updatedAt = System.currentTimeMillis()
+                applyEditorSize()
                 updateMeta()
                 saveNow(final = false)
             }
@@ -197,7 +199,97 @@ class EditorActivity : AppCompatActivity() {
         buildColorDots()
         updateBackgroundRow()
         showBodyMode()
+        applyEditorSize()
         updateMeta()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::memo.isInitialized) buildStickySizeRows()
+    }
+
+    /** The memo's own text size, used in this editor. */
+    private fun applyEditorSize() {
+        val (titleSp, bodySp) = MemoFormat.editorSizes(memo.textSize)
+        titleInput.textSize = titleSp
+        textInput.textSize = bodySp
+        val box = findViewById<LinearLayout>(R.id.checklist)
+        for (i in 0 until box.childCount) {
+            val row = box.getChildAt(i) as? LinearLayout ?: continue
+            (row.getChildAt(1) as? EditText)?.textSize = bodySp
+        }
+    }
+
+    /** One text size control per sticky note showing this memo. */
+    private fun buildStickySizeRows() {
+        val box = findViewById<LinearLayout>(R.id.stickySizes)
+        box.removeAllViews()
+        val ids = StickyWidget.widgetsFor(this, memo.id)
+        ids.forEachIndexed { index, widgetId ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(40), 0, 0, dp(4))
+            }
+            row.addView(TextView(this).apply {
+                text = if (ids.size == 1) "文字サイズ" else "付箋${index + 1}の文字"
+                setTextColor(ContextCompat.getColor(this@EditorActivity, R.color.ink_soft))
+                textSize = 13f
+                setPadding(0, 0, dp(8), 0)
+            })
+            val group = MaterialButtonToggleGroup(this).apply {
+                isSingleSelection = true
+                isSelectionRequired = true
+            }
+            val keys = listOf("s" to "小", "m" to "中", "l" to "大")
+            val buttonIds = keys.map { (key, label) ->
+                val b = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    id = View.generateViewId()
+                    text = label
+                    minWidth = dp(44)
+                    minimumWidth = dp(44)
+                    setPadding(dp(8), paddingTop, dp(8), paddingBottom)
+                }
+                group.addView(b)
+                key to b.id
+            }
+            val current = StickyWidget.sizeOf(this, widgetId, memo.textSize)
+            buttonIds.firstOrNull { it.first == current }?.let { group.check(it.second) }
+            group.addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (!isChecked) return@addOnButtonCheckedListener
+                val key = buttonIds.firstOrNull { it.second == checkedId }?.first ?: return@addOnButtonCheckedListener
+                StickyWidget.setSize(this, widgetId, key)
+            }
+            row.addView(group)
+            box.addView(row)
+        }
+        box.visibility = if (ids.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun showMoreMenu(anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        menu.menu.add(0, 1, 0, "テキストをコピー")
+        menu.menu.add(0, 2, 1, "複製を作る")
+        menu.menu.add(0, 3, 2, "共有")
+        menu.menu.add(0, 4, 3, "ゴミ箱に移す")
+        menu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> MemoActions.copyText(this, memo)
+                2 -> {
+                    handler.removeCallbacks(saveRunnable)
+                    if (!memo.isEmpty) {
+                        MemoActions.duplicate(this, memo)
+                        finish()
+                    } else {
+                        MemoActions.duplicate(this, memo)
+                    }
+                }
+                3 -> MemoActions.share(this, memo)
+                4 -> confirmDelete()
+            }
+            true
+        }
+        menu.show()
     }
 
     private fun showBodyMode() {
@@ -248,7 +340,7 @@ class EditorActivity : AppCompatActivity() {
             val field = EditText(this).apply {
                 setText(item.text)
                 background = null
-                textSize = 17f
+                textSize = MemoFormat.editorSizes(memo.textSize).second
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
                 imeOptions = EditorInfo.IME_ACTION_NEXT
                 hint = "項目"
@@ -314,20 +406,6 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    private fun share() {
-        if (memo.isEmpty) {
-            Toast.makeText(this, "共有する内容がありません", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val send = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, memo.shareText)
-            if (memo.title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, memo.title.trim())
-        }
-        startActivity(Intent.createChooser(send, "メモを共有"))
-    }
-
-    /** Applies a new photo or pattern. A new background starts with the clear label. */
     private fun setBackground(value: String) {
         val old = memo.bg
         memo.bg = value

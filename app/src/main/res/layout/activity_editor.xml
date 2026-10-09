@@ -56,21 +56,12 @@
             app:tint="@color/ink_soft" />
 
         <ImageButton
-            android:id="@+id/share"
+            android:id="@+id/more"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="共有"
-            android:src="@drawable/ic_share"
-            app:tint="@color/ink_soft" />
-
-        <ImageButton
-            android:id="@+id/delete"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/delete"
-            android:src="@drawable/ic_delete"
+            android:contentDescription="その他の操作"
+            android:src="@drawable/ic_more"
             app:tint="@color/ink_soft" />
     </LinearLayout>
 
@@ -201,6 +192,30 @@
                         android:paddingEnd="8dp"
                         android:text="大" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="40dp"
+                    android:text="付箋"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="8dp"
+                    android:text="文字色"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="13sp" />
 
                 <com.google.android.material.button.MaterialButtonToggleGroup
                     android:id="@+id/inkGroup"
@@ -230,6 +245,13 @@
                         android:text="白" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/stickySizes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="6dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -181,6 +181,28 @@ object MemoStore {
         write(context, list)
     }
 
+    /** Makes an independent copy of a memo (its photo included) and returns it. */
+    @Synchronized
+    fun duplicate(context: Context, id: String): Memo? {
+        val src = load(context).firstOrNull { it.id == id } ?: return null
+        val fresh = Memo.create()
+        val now = System.currentTimeMillis()
+        val copy = src.copy(
+            id = fresh.id,
+            title = if (src.title.isBlank()) "" else src.title.trim() + "（コピー）",
+            pinned = false,
+            bg = MemoImages.copy(context, src.bg, fresh.id),
+            createdAt = now,
+            updatedAt = now,
+            items = src.items.map { CheckItem.create(it.text).copy(done = it.done) },
+            deletedAt = 0L,
+        )
+        val list = load(context)
+        list.add(copy)
+        write(context, list)
+        return copy.copy()
+    }
+
     /** Removes a memo and its photo for good. */
     @Synchronized
     fun delete(context: Context, id: String) {
@@ -256,10 +278,18 @@ object MemoStore {
 }
 
 object MemoFormat {
-    val COLORS = listOf("", "clear", "red", "yellow", "green", "blue")
+    /** "" is white, the default. */
+    val COLORS = listOf("", "red", "yellow", "green", "blue", "clear")
     private val COLOR_NAMES = mapOf(
-        "" to "色なし", "clear" to "透明", "red" to "赤", "yellow" to "黄", "green" to "緑", "blue" to "青"
+        "" to "白", "red" to "赤", "yellow" to "黄", "green" to "緑", "blue" to "青", "clear" to "透明"
     )
+
+    /** Title and body sizes in sp for the memo editor. */
+    fun editorSizes(key: String): Pair<Float, Float> = when (key) {
+        "s" -> 18f to 15f
+        "l" -> 24f to 21f
+        else -> 20f to 17f
+    }
 
     /** Title and body sizes in sp for the sticky note. */
     fun textSizes(key: String): Pair<Float, Float> = when (key) {

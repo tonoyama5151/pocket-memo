@@ -16,7 +16,7 @@
     <color name="tag_blue">#FF3B6FD0</color>
 
     <!-- Sticky note widget: always paper-like, same in both themes -->
-    <color name="note_plain">#FFFFF3B8</color>
+    <color name="note_plain">#FFFFFFFF</color>
     <color name="note_red">#FFF9D3CE</color>
     <color name="note_yellow">#FFFFE27A</color>
     <color name="note_green">#FFCFEBD6</color>
