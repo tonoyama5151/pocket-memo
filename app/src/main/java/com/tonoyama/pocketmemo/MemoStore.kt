@@ -284,19 +284,26 @@ object MemoFormat {
         "" to "白", "red" to "赤", "yellow" to "黄", "green" to "緑", "blue" to "青", "clear" to "透明"
     )
 
-    /** Title and body sizes in sp for the memo editor. */
-    fun editorSizes(key: String): Pair<Float, Float> = when (key) {
-        "s" -> 18f to 15f
-        "l" -> 24f to 21f
-        else -> 20f to 17f
+    /** Text size levels 1–7; the old small/medium/large are levels 3, 4 and 5. */
+    val LEVEL_NAMES = arrayOf("極小", "より小", "小", "中", "大", "より大", "特大")
+    private val EDITOR_BODY = floatArrayOf(12f, 13.5f, 15f, 17f, 21f, 24f, 28f)
+    private val NOTE_BODY = floatArrayOf(10f, 11.5f, 13f, 16f, 20f, 23f, 27f)
+
+    fun level(key: String): Int = when (key) {
+        "s" -> 3
+        "m" -> 4
+        "l" -> 5
+        else -> key.toIntOrNull()?.coerceIn(1, 7) ?: 4
     }
 
+    fun levelName(key: String): String = LEVEL_NAMES[level(key) - 1]
+
+    /** Title and body sizes in sp for the memo editor. */
+    fun editorSizes(key: String): Pair<Float, Float> = EDITOR_BODY[level(key) - 1].let { it + 3f to it }
+
     /** Title and body sizes in sp for the sticky note. */
-    fun textSizes(key: String): Pair<Float, Float> = when (key) {
-        "s" -> 15f to 13f
-        "l" -> 22f to 20f
-        else -> 18f to 16f
-    }
+    fun textSizes(key: String): Pair<Float, Float> = NOTE_BODY[level(key) - 1].let { it + 2f to it }
+
     private val WEEKDAYS = arrayOf("日", "月", "火", "水", "木", "金", "土")
 
     fun colorName(key: String) = COLOR_NAMES[key] ?: "色なし"

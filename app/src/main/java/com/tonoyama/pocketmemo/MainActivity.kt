@@ -73,6 +73,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             startActivity(EditorActivity.intent(this, null))
         }
+        findViewById<FloatingActionButton>(R.id.trashButton).setOnClickListener {
+            startActivity(Intent(this, TrashActivity::class.java))
+        }
         val more = findViewById<ImageButton>(R.id.more)
         more.setOnClickListener { showMenu(more) }
 
@@ -88,13 +91,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showMenu(anchor: View) {
         val menu = PopupMenu(this, anchor)
-        menu.menu.add(0, 1, 0, "ゴミ箱")
         menu.menu.add(0, 2, 1, "バックアップを書き出す")
         menu.menu.add(0, 3, 2, "バックアップから読み込む")
         menu.menu.add(0, 4, 3, "表示テーマ")
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> startActivity(Intent(this, TrashActivity::class.java))
                 2 -> {
                     val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.JAPAN).format(Date())
                     exportLauncher.launch("pocket-memo-$stamp.zip")

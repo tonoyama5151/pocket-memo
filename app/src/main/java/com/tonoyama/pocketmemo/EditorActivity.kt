@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.slider.Slider
 
 class EditorActivity : AppCompatActivity() {
 
@@ -159,29 +160,40 @@ class EditorActivity : AppCompatActivity() {
             updateMeta()
         }
 
-        val sizeGroup = findViewById<MaterialButtonToggleGroup>(R.id.sizeGroup)
-        sizeGroup.check(
-            when (memo.textSize) {
-                "s" -> R.id.sizeS
-                "l" -> R.id.sizeL
-                else -> R.id.sizeM
-            }
-        )
-        sizeGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
-            val value = when (checkedId) {
-                R.id.sizeS -> "s"
-                R.id.sizeL -> "l"
-                else -> "m"
-            }
-            if (value != memo.textSize) {
-                memo.textSize = value
+        val memoSize = findViewById<Slider>(R.id.memoSize)
+        val memoSizeLabel = findViewById<TextView>(R.id.memoSizeLabel)
+        memoSize.value = MemoFormat.level(memo.textSize).toFloat()
+        memoSize.setLabelFormatter { MemoFormat.LEVEL_NAMES[it.toInt().coerceIn(1, 7) - 1] }
+        memoSizeLabel.text = MemoFormat.levelName(memo.textSize)
+        memoSize.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            val key = value.toInt().toString()
+            if (key != memo.textSize) {
+                memo.textSize = key
                 memo.updatedAt = System.currentTimeMillis()
+                memoSizeLabel.text = MemoFormat.levelName(key)
                 applyEditorSize()
                 updateMeta()
                 saveNow(final = false)
             }
         }
+
+        val stickyBody = findViewById<View>(R.id.stickyBody)
+        val chevron = findViewById<ImageView>(R.id.stickyChevron)
+        val summary = findViewById<View>(R.id.stickySummary)
+        val settings = getSharedPreferences("settings", MODE_PRIVATE)
+        fun showSticky(open: Boolean) {
+            stickyBody.visibility = if (open) View.VISIBLE else View.GONE
+            summary.visibility = if (open) View.GONE else View.VISIBLE
+            chevron.rotation = if (open) 180f else 0f
+        }
+        showSticky(settings.getBoolean("sticky_open", true))
+        findViewById<View>(R.id.stickyHeader).setOnClickListener {
+            val open = stickyBody.visibility != View.VISIBLE
+            settings.edit().putBoolean("sticky_open", open).apply()
+            showSticky(open)
+        }
+
         val inkGroup = findViewById<MaterialButtonToggleGroup>(R.id.inkGroup)
         inkGroup.check(if (memo.textColor == "light") R.id.inkLight else R.id.inkDark)
         inkGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -220,7 +232,7 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    /** One text size control per sticky note showing this memo. */
+    /** One text size slider per sticky note showing this memo. */
     private fun buildStickySizeRows() {
         val box = findViewById<LinearLayout>(R.id.stickySizes)
         box.removeAllViews()
@@ -229,41 +241,40 @@ class EditorActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(40), 0, 0, dp(4))
             }
             row.addView(TextView(this).apply {
-                text = if (ids.size == 1) "文字サイズ" else "付箋${index + 1}の文字"
+                text = if (ids.size == 1) "文字サイズ" else "付箋${index + 1}"
                 setTextColor(ContextCompat.getColor(this@EditorActivity, R.color.ink_soft))
                 textSize = 13f
-                setPadding(0, 0, dp(8), 0)
+                minWidth = dp(64)
             })
-            val group = MaterialButtonToggleGroup(this).apply {
-                isSingleSelection = true
-                isSelectionRequired = true
-            }
-            val keys = listOf("s" to "小", "m" to "中", "l" to "大")
-            val buttonIds = keys.map { (key, label) ->
-                val b = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    id = View.generateViewId()
-                    text = label
-                    minWidth = dp(44)
-                    minimumWidth = dp(44)
-                    setPadding(dp(8), paddingTop, dp(8), paddingBottom)
-                }
-                group.addView(b)
-                key to b.id
-            }
             val current = StickyWidget.sizeOf(this, widgetId, memo.textSize)
-            buttonIds.firstOrNull { it.first == current }?.let { group.check(it.second) }
-            group.addOnButtonCheckedListener { _, checkedId, isChecked ->
-                if (!isChecked) return@addOnButtonCheckedListener
-                val key = buttonIds.firstOrNull { it.second == checkedId }?.first ?: return@addOnButtonCheckedListener
-                StickyWidget.setSize(this, widgetId, key)
+            val label = TextView(this).apply {
+                text = MemoFormat.levelName(current)
+                setTextColor(ContextCompat.getColor(this@EditorActivity, R.color.ink))
+                textSize = 13f
+                minWidth = dp(48)
+                gravity = Gravity.END
             }
-            row.addView(group)
+            val slider = Slider(this).apply {
+                valueFrom = 1f
+                valueTo = 7f
+                stepSize = 1f
+                value = MemoFormat.level(current).toFloat()
+                contentDescription = "付箋の文字サイズ"
+                setLabelFormatter { MemoFormat.LEVEL_NAMES[it.toInt().coerceIn(1, 7) - 1] }
+                addOnChangeListener { _, v, fromUser ->
+                    if (!fromUser) return@addOnChangeListener
+                    val key = v.toInt().toString()
+                    label.text = MemoFormat.levelName(key)
+                    StickyWidget.setSize(this@EditorActivity, widgetId, key)
+                }
+            }
+            row.addView(slider, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            row.addView(label)
             box.addView(row)
         }
-        box.visibility = if (ids.isEmpty()) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.stickyNone).visibility = if (ids.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun showMoreMenu(anchor: View) {

@@ -86,65 +86,13 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingBottom="6dp" />
+                android:paddingBottom="2dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:minHeight="48dp"
-                android:orientation="horizontal"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="40dp"
-                    android:text="背景"
-                    android:textColor="@color/ink_soft"
-                    android:textSize="13sp" />
-
-                <ImageView
-                    android:id="@+id/bgThumb"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_marginEnd="4dp"
-                    android:importantForAccessibility="no"
-                    android:scaleType="centerCrop"
-                    android:visibility="gone" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/bgPick"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="写真" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/bgPattern"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="柄" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/bgRemove"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="0dp"
-                    android:text="外す"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingBottom="10dp">
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -154,104 +102,181 @@
                     android:textColor="@color/ink_soft"
                     android:textSize="13sp" />
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/sizeGroup"
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/memoSize"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="メモの文字サイズ"
+                    android:stepSize="1"
+                    android:value="4"
+                    android:valueFrom="1"
+                    android:valueTo="7" />
+
+                <TextView
+                    android:id="@+id/memoSizeLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="10dp"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/sizeS"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="44dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="小" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/sizeM"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="44dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="中" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/sizeL"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="44dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="大" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
+                    android:gravity="end"
+                    android:minWidth="48dp"
+                    android:textColor="@color/ink"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/stickyHeader"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingBottom="6dp">
+                android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:minWidth="40dp"
-                    android:text="付箋"
-                    android:textColor="@color/ink_soft"
-                    android:textSize="13sp" />
+                    android:layout_weight="1"
+                    android:text="付箋の設定"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/stickySummary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingEnd="8dp"
-                    android:text="文字色"
+                    android:paddingEnd="6dp"
+                    android:text="文字色・文字サイズ・背景"
                     android:textColor="@color/ink_soft"
-                    android:textSize="13sp" />
+                    android:textSize="12sp" />
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/inkGroup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/inkDark"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="44dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="黒" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/inkLight"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="44dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:text="白" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
+                <ImageView
+                    android:id="@+id/stickyChevron"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_expand"
+                    app:tint="@color/ink_soft" />
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/stickySizes"
+                android:id="@+id/stickyBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="6dp" />
+                android:paddingBottom="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="64dp"
+                        android:text="文字色"
+                        android:textColor="@color/ink_soft"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/inkGroup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/inkDark"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="48dp"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="黒" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/inkLight"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="48dp"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="白" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stickySizes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/stickyNone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="6dp"
+                    android:text="付箋の文字サイズは、このメモを付箋として貼ると設定できます"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="64dp"
+                        android:text="背景"
+                        android:textColor="@color/ink_soft"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:id="@+id/bgThumb"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="4dp"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bgPick"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:text="写真" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bgPattern"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:text="柄" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/bgRemove"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:text="外す"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
