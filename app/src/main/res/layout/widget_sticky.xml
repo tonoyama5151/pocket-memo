@@ -45,5 +45,15 @@
             android:text="@string/widget_desc"
             android:textColor="#FF2A2A2A"
             android:textSize="16sp" />
+
+        <ListView
+            android:id="@+id/w_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@null"
+            android:dividerHeight="0dp"
+            android:scrollbars="none"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

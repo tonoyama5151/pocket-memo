@@ -1,18 +1,56 @@
 package com.tonoyama.pocketmemo
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var adapter: MemoAdapter
     private var query = ""
+
+    private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val app = applicationContext
+        Thread {
+            val result = runCatching { Backup.export(app, uri) }
+            runOnUiThread {
+                result.onSuccess { Toast.makeText(this, "${it}件のメモを書き出しました", Toast.LENGTH_LONG).show() }
+                    .onFailure { Toast.makeText(this, "書き出しに失敗しました", Toast.LENGTH_LONG).show() }
+            }
+        }.start()
+    }
+
+    private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        val app = applicationContext
+        Thread {
+            val result = runCatching { Backup.importFrom(app, uri) }
+            runOnUiThread {
+                val count = result.getOrNull()
+                when {
+                    count == null -> Toast.makeText(this, "ポケットメモのバックアップファイルではないようです", Toast.LENGTH_LONG).show()
+                    count == 0 -> Toast.makeText(this, "新しく読み込むメモはありませんでした", Toast.LENGTH_LONG).show()
+                    else -> Toast.makeText(this, "${count}件のメモを読み込みました", Toast.LENGTH_LONG).show()
+                }
+                refresh()
+            }
+        }.start()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +70,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             startActivity(EditorActivity.intent(this, null))
         }
+        val more = findViewById<ImageButton>(R.id.more)
+        more.setOnClickListener { showMenu(more) }
+
+        MemoStore.purgeOldTrash(this)
         // Redraw sticky notes so they pick up any change in how they look after an update.
         StickyWidget.updateAll(this)
     }
@@ -41,12 +83,38 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
+    private fun showMenu(anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        menu.menu.add(0, 1, 0, "ゴミ箱")
+        menu.menu.add(0, 2, 1, "バックアップを書き出す")
+        menu.menu.add(0, 3, 2, "バックアップから読み込む")
+        menu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> startActivity(Intent(this, TrashActivity::class.java))
+                2 -> {
+                    val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.JAPAN).format(Date())
+                    exportLauncher.launch("pocket-memo-$stamp.zip")
+                }
+                3 -> MaterialAlertDialogBuilder(this)
+                    .setTitle("バックアップから読み込む")
+                    .setMessage("書き出したファイルのメモをこのスマホに追加します。同じメモがある場合は、新しい方が残ります。")
+                    .setNegativeButton("やめる", null)
+                    .setPositiveButton("ファイルを選ぶ") { _, _ ->
+                        importLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+                    }
+                    .show()
+            }
+            true
+        }
+        menu.show()
+    }
+
     private fun refresh() {
-        val all = MemoStore.all(this)
+        val all = MemoStore.active(this)
             .filter { !it.isEmpty }
             .sortedByDescending { it.updatedAt }
         val q = query.trim().lowercase()
-        val shown = if (q.isEmpty()) all else all.filter { "${it.title}\n${it.text}".lowercase().contains(q) }
+        val shown = if (q.isEmpty()) all else all.filter { it.searchText.lowercase().contains(q) }
         adapter.submit(shown)
 
         findViewById<View>(R.id.empty).visibility = if (all.isEmpty()) View.VISIBLE else View.GONE

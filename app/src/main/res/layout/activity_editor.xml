@@ -29,6 +29,15 @@
             android:layout_weight="1" />
 
         <ImageButton
+            android:id="@+id/mode"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="チェックリストにする"
+            android:src="@drawable/ic_checklist"
+            app:tint="@color/ink_soft" />
+
+        <ImageButton
             android:id="@+id/pin"
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -44,6 +53,15 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/to_widget"
             android:src="@drawable/ic_sticky"
+            app:tint="@color/ink_soft" />
+
+        <ImageButton
+            android:id="@+id/share"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="共有"
+            android:src="@drawable/ic_share"
             app:tint="@color/ink_soft" />
 
         <ImageButton
@@ -260,6 +278,25 @@
                     android:textColor="@color/ink"
                     android:textColorHint="@color/ink_soft"
                     android:textSize="17sp" />
+
+                <LinearLayout
+                    android:id="@+id/checklist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="6dp"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addItem"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="項目を追加"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_add" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

@@ -6,11 +6,14 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
+import androidx.annotation.RequiresApi
 import androidx.core.app.TaskStackBuilder
+import androidx.core.graphics.ColorUtils
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -59,7 +62,22 @@ class StickyWidget : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_sticky)
             val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
-            if (memo != null && !memo.isEmpty) {
+            views.setViewVisibility(R.id.w_list, View.GONE)
+            if (memo != null && memo.inTrash) {
+                views.setInt(ROOT, "setBackgroundResource", R.drawable.bg_note_plain)
+                views.setViewVisibility(R.id.w_bg, View.GONE)
+                views.setViewVisibility(R.id.w_title, View.VISIBLE)
+                views.setViewVisibility(R.id.w_body, View.VISIBLE)
+                val ink = Backgrounds.textColor("dark")
+                views.setTextColor(R.id.w_title, ink)
+                views.setTextColor(R.id.w_body, ink)
+                views.setTextViewText(R.id.w_title, "このメモはゴミ箱にあります")
+                views.setTextViewText(R.id.w_body, "タップしてゴミ箱を開くと、元に戻せます")
+                val openTrash = TaskStackBuilder.create(context)
+                    .addNextIntentWithParentStack(Intent(context, TrashActivity::class.java))
+                    .getPendingIntent(widgetId, flags)
+                views.setOnClickPendingIntent(ROOT, openTrash)
+            } else if (memo != null && !memo.isEmpty) {
                 views.setInt(ROOT, "setBackgroundResource", MemoFormat.noteBackground(memo.color))
 
                 val textColor = Backgrounds.textColor(memo.textColor)
@@ -73,6 +91,10 @@ class StickyWidget : AppWidgetProvider() {
                 views.setTextViewText(R.id.w_body, memo.body)
                 views.setTextColor(R.id.w_body, textColor)
                 views.setTextViewTextSize(R.id.w_body, TypedValue.COMPLEX_UNIT_SP, bodySp)
+                if (memo.isChecklist && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Tickable rows on Android 12+; older versions show the text list above.
+                    setChecklist(context, views, widgetId, memo, textColor, bodySp)
+                }
 
                 val picture = renderBackground(context, manager, widgetId, memo)
                 if (picture != null) {
@@ -107,6 +129,35 @@ class StickyWidget : AppWidgetProvider() {
                 views.setOnClickPendingIntent(ROOT, PendingIntent.getActivity(context, widgetId, pick, flags))
             }
             manager.updateAppWidget(widgetId, views)
+        }
+
+        @RequiresApi(Build.VERSION_CODES.S)
+        private fun setChecklist(context: Context, views: RemoteViews, widgetId: Int, memo: Memo, textColor: Int, bodySp: Float) {
+            val filled = memo.items.filter { it.text.isNotBlank() }
+            if (filled.isEmpty()) return
+            val faded = ColorUtils.setAlphaComponent(textColor, 0x8C)
+            val builder = RemoteViews.RemoteCollectionItems.Builder().setHasStableIds(true).setViewTypeCount(1)
+            filled.forEach { item ->
+                val row = RemoteViews(context.packageName, R.layout.widget_check_item)
+                row.setTextViewText(R.id.w_check, item.text.trim())
+                row.setTextColor(R.id.w_check, if (item.done) faded else textColor)
+                row.setTextViewTextSize(R.id.w_check, TypedValue.COMPLEX_UNIT_SP, bodySp)
+                row.setCompoundButtonChecked(R.id.w_check, item.done)
+                val fillIn = Intent()
+                    .putExtra(CheckToggleReceiver.EXTRA_MEMO, memo.id)
+                    .putExtra(CheckToggleReceiver.EXTRA_ITEM, item.id)
+                row.setOnCheckedChangeResponse(R.id.w_check, RemoteViews.RemoteResponse.fromFillInIntent(fillIn))
+                builder.addItem(item.id.hashCode().toLong(), row)
+            }
+            views.setRemoteAdapter(R.id.w_list, builder.build())
+            val template = PendingIntent.getBroadcast(
+                context, widgetId,
+                Intent(context, CheckToggleReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            )
+            views.setPendingIntentTemplate(R.id.w_list, template)
+            views.setViewVisibility(R.id.w_body, View.GONE)
+            views.setViewVisibility(R.id.w_list, View.VISIBLE)
         }
 
         private fun renderBackground(context: Context, manager: AppWidgetManager, widgetId: Int, memo: Memo) =

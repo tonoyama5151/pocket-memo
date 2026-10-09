@@ -7,6 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Paint
+import android.text.InputType
+import android.view.Gravity
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.CheckBox
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
@@ -84,6 +90,12 @@ class EditorActivity : AppCompatActivity() {
             finish()
             return
         }
+        if (existing != null && existing.inTrash) {
+            Toast.makeText(this, "このメモはゴミ箱にあります", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, TrashActivity::class.java))
+            finish()
+            return
+        }
         memo = existing ?: Memo.create()
         setContentView(R.layout.activity_editor)
 
@@ -125,6 +137,13 @@ class EditorActivity : AppCompatActivity() {
             Toast.makeText(this, if (memo.pinned) "ピン留めしました" else "ピン留めを外しました", Toast.LENGTH_SHORT).show()
         }
         findViewById<ImageButton>(R.id.sticky).setOnClickListener { pinToHomeScreen() }
+        findViewById<ImageButton>(R.id.share).setOnClickListener { share() }
+        findViewById<ImageButton>(R.id.mode).setOnClickListener { toggleMode() }
+        findViewById<MaterialButton>(R.id.addItem).setOnClickListener {
+            memo.items = memo.items + CheckItem.create()
+            onEdited()
+            rebuildChecklist(focusIndex = memo.items.size - 1)
+        }
         findViewById<ImageButton>(R.id.delete).setOnClickListener { confirmDelete() }
         bgPick.setOnClickListener {
             pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -177,7 +196,135 @@ class EditorActivity : AppCompatActivity() {
 
         buildColorDots()
         updateBackgroundRow()
+        showBodyMode()
         updateMeta()
+    }
+
+    private fun showBodyMode() {
+        val check = memo.isChecklist
+        textInput.visibility = if (check) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.checklist).visibility = if (check) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.addItem).visibility = if (check) View.VISIBLE else View.GONE
+        val mode = findViewById<ImageButton>(R.id.mode)
+        mode.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(this, if (check) R.color.ai else R.color.ink_soft)
+        )
+        mode.contentDescription = if (check) "普通のメモに戻す" else "チェックリストにする"
+        if (check) rebuildChecklist(focusIndex = -1)
+    }
+
+    private fun toggleMode() {
+        if (memo.isChecklist) {
+            memo.text = memo.items.map { it.text.trim() }.filter { it.isNotEmpty() }.joinToString("\n")
+            memo.items = emptyList()
+            memo.type = "note"
+            textInput.setText(memo.text)
+            Toast.makeText(this, "普通のメモにしました", Toast.LENGTH_SHORT).show()
+        } else {
+            val lines = memo.text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            memo.items = if (lines.isEmpty()) listOf(CheckItem.create()) else lines.map { CheckItem.create(it) }
+            memo.text = ""
+            memo.type = "check"
+            Toast.makeText(this, "チェックリストにしました", Toast.LENGTH_SHORT).show()
+        }
+        memo.updatedAt = System.currentTimeMillis()
+        showBodyMode()
+        updateMeta()
+        saveNow(final = false)
+    }
+
+    private fun rebuildChecklist(focusIndex: Int) {
+        val box = findViewById<LinearLayout>(R.id.checklist)
+        box.removeAllViews()
+        val ink = ContextCompat.getColor(this, R.color.ink)
+        val soft = ContextCompat.getColor(this, R.color.ink_soft)
+        memo.items.forEachIndexed { index, item ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(8), 0, dp(4), 0)
+            }
+            val check = CheckBox(this).apply { isChecked = item.done }
+            val field = EditText(this).apply {
+                setText(item.text)
+                background = null
+                textSize = 17f
+                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                imeOptions = EditorInfo.IME_ACTION_NEXT
+                hint = "項目"
+                setHintTextColor(soft)
+                styleDone(this, item.done, ink, soft)
+            }
+            val remove = ImageButton(this).apply {
+                setImageResource(R.drawable.ic_close)
+                background = null
+                contentDescription = "項目を削除"
+                imageTintList = ColorStateList.valueOf(soft)
+            }
+            row.addView(check, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            row.addView(field, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            row.addView(remove, LinearLayout.LayoutParams(dp(40), dp(40)))
+            box.addView(row)
+
+            check.setOnCheckedChangeListener { _, isChecked ->
+                memo.items = memo.items.map { if (it.id == item.id) it.copy(done = isChecked) else it }
+                styleDone(field, isChecked, ink, soft)
+                memo.updatedAt = System.currentTimeMillis()
+                updateMeta()
+                saveNow(final = false)
+            }
+            field.doAfterTextChanged { e ->
+                val value = e?.toString().orEmpty()
+                val current = memo.items.firstOrNull { it.id == item.id } ?: return@doAfterTextChanged
+                if (current.text == value) return@doAfterTextChanged
+                memo.items = memo.items.map { if (it.id == item.id) it.copy(text = value) else it }
+                onEdited()
+            }
+            field.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_NEXT || actionId == EditorInfo.IME_ACTION_DONE) {
+                    val at = memo.items.indexOfFirst { it.id == item.id } + 1
+                    memo.items = memo.items.toMutableList().apply { add(at, CheckItem.create()) }
+                    onEdited()
+                    rebuildChecklist(focusIndex = at)
+                    true
+                } else {
+                    false
+                }
+            }
+            remove.setOnClickListener {
+                memo.items = memo.items.filter { it.id != item.id }
+                onEdited()
+                rebuildChecklist(focusIndex = -1)
+            }
+            if (index == focusIndex) {
+                field.post {
+                    field.requestFocus()
+                    getSystemService(InputMethodManager::class.java)?.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT)
+                }
+            }
+        }
+    }
+
+    private fun styleDone(field: EditText, done: Boolean, ink: Int, soft: Int) {
+        field.setTextColor(if (done) soft else ink)
+        field.paintFlags = if (done) {
+            field.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+        } else {
+            field.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+        }
+    }
+
+    private fun share() {
+        if (memo.isEmpty) {
+            Toast.makeText(this, "共有する内容がありません", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, memo.shareText)
+            if (memo.title.isNotBlank()) putExtra(Intent.EXTRA_SUBJECT, memo.title.trim())
+        }
+        startActivity(Intent.createChooser(send, "メモを共有"))
     }
 
     /** Applies a new photo or pattern. A new background starts with the clear label. */
@@ -285,7 +432,8 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun updateMeta() {
-        val chars = MemoFormat.charCount(memo.title) + MemoFormat.charCount(memo.text)
+        val chars = MemoFormat.charCount(memo.title) + MemoFormat.charCount(memo.text) +
+            memo.items.sumOf { MemoFormat.charCount(it.text) }
         meta.text = "${MemoFormat.longDate(memo.updatedAt)} 更新 · ${chars}文字"
         val accent = ContextCompat.getColor(this, R.color.ai)
         val soft = ContextCompat.getColor(this, R.color.ink_soft)
@@ -354,14 +502,19 @@ class EditorActivity : AppCompatActivity() {
 
     private fun confirmDelete() {
         MaterialAlertDialogBuilder(this)
-            .setMessage("このメモを削除しますか？")
+            .setMessage("このメモをゴミ箱に移しますか？30日間は元に戻せます。")
             .setNegativeButton("やめる", null)
-            .setPositiveButton("削除する") { _, _ ->
+            .setPositiveButton("ゴミ箱に移す") { _, _ ->
                 handler.removeCallbacks(saveRunnable)
                 deleted = true
-                if (MemoStore.get(this, memo.id) != null) MemoStore.delete(this, memo.id) else MemoImages.delete(this, memo.bg)
+                if (memo.isEmpty) {
+                    if (MemoStore.get(this, memo.id) != null) MemoStore.delete(this, memo.id) else MemoImages.delete(this, memo.bg)
+                } else {
+                    MemoStore.save(this, memo)
+                    MemoStore.moveToTrash(this, memo.id)
+                }
                 StickyWidget.updateAll(this)
-                Toast.makeText(this, "削除しました", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "ゴミ箱に移しました", Toast.LENGTH_SHORT).show()
                 finish()
             }
             .show()

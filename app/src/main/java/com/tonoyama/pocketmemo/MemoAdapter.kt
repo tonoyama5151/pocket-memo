@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class MemoAdapter(
     private val showSections: Boolean,
+    private val dateText: (Memo) -> String = { MemoFormat.shortDate(it.updatedAt) },
     private val onClick: (Memo) -> Unit,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -76,7 +77,7 @@ class MemoAdapter(
             preview.text = memo.preview
             preview.maxLines = if (heading.isEmpty()) 3 else 2
             preview.visibility = if (memo.preview.isEmpty()) View.GONE else View.VISIBLE
-            date.text = MemoFormat.shortDate(memo.updatedAt)
+            date.text = dateText(memo)
             pinMark.visibility = if (memo.pinned) View.VISIBLE else View.GONE
             itemView.setOnClickListener { onClick(memo) }
         }

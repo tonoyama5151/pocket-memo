@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheckBox xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_check"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:includeFontPadding="false"
+    android:minHeight="34dp"
+    android:paddingStart="4dp"
+    android:textColor="#FF2A2A2A"
+    android:textSize="16sp" />

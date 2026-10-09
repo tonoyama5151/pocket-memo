@@ -26,6 +26,25 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".TrashActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ShareReceiveActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".WidgetConfigActivity"
             android:exported="true"
             android:label="@string/widget_pick_title">
@@ -48,6 +67,10 @@
 
         <receiver
             android:name=".PinResultReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".CheckToggleReceiver"
             android:exported="false" />
     </application>
 </manifest>

@@ -23,7 +23,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_widget_config)
 
-        val memos = MemoStore.all(this)
+        val memos = MemoStore.active(this)
             .filter { !it.isEmpty }
             .sortedByDescending { it.updatedAt }
         val adapter = MemoAdapter(showSections = false) { memo -> choose(memo.id) }
