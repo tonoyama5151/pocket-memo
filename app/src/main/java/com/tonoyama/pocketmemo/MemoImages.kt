@@ -22,7 +22,7 @@ object MemoImages {
     fun file(context: Context, name: String) = File(dir(context), name)
 
     fun delete(context: Context, name: String) {
-        if (name.isNotEmpty()) file(context, name).delete()
+        if (name.isNotEmpty() && !Backgrounds.isPattern(name)) file(context, name).delete()
     }
 
     /** Copies the picked image into app storage and returns its file name, or null on failure. */
@@ -66,9 +66,9 @@ object MemoImages {
         null
     }
 
-    /** Small, memory-light bitmap for the widget and the editor thumbnail. */
-    fun load(context: Context, name: String): Bitmap? {
-        if (name.isEmpty()) return null
+    /** The stored photo as saved, before any brightness adjustment. */
+    fun loadRaw(context: Context, name: String): Bitmap? {
+        if (name.isEmpty() || Backgrounds.isPattern(name)) return null
         val f = file(context, name)
         if (!f.exists()) return null
         val opts = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 }

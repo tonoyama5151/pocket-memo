@@ -30,7 +30,7 @@
             android:includeFontPadding="false"
             android:maxLines="2"
             android:text="@string/widget_name"
-            android:textColor="@color/note_ink"
+            android:textColor="#FF2A2A2A"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -43,7 +43,7 @@
             android:includeFontPadding="false"
             android:lineSpacingMultiplier="0.95"
             android:text="@string/widget_desc"
-            android:textColor="@color/note_ink"
+            android:textColor="#FF2A2A2A"
             android:textSize="16sp" />
     </LinearLayout>
 </FrameLayout>

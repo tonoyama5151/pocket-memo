@@ -21,11 +21,6 @@
     <color name="note_yellow">#FFFFE27A</color>
     <color name="note_green">#FFCFEBD6</color>
     <color name="note_blue">#FFD3E1F7</color>
-    <color name="overlay_plain">#B3FFF3B8</color>
-    <color name="overlay_red">#B3F9D3CE</color>
-    <color name="overlay_yellow">#B3FFE27A</color>
-    <color name="overlay_green">#B3CFEBD6</color>
-    <color name="overlay_blue">#B3D3E1F7</color>
     <color name="note_ink">#FF2A2A2A</color>
     <color name="note_ink_soft">#FF5A5A5A</color>
 

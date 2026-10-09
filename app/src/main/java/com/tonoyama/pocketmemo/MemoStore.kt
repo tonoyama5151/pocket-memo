@@ -14,10 +14,14 @@ data class Memo(
     var text: String,
     var color: String,
     var pinned: Boolean,
-    /** File name of the background image in app storage, or "" for none. */
+    /** Photo file name in app storage, "pattern:<key>" for a built-in pattern, or "" for none. */
     var bg: String,
     val createdAt: Long,
     var updatedAt: Long,
+    /** Sticky note text size: "s", "m" or "l". */
+    var textSize: String = "m",
+    /** Sticky note text color: "dark" or "light". */
+    var textColor: String = "dark",
 ) {
     /** A memo with neither title nor body is not kept. */
     val isEmpty: Boolean
@@ -99,6 +103,8 @@ object MemoStore {
                             bg = o.optString("bg", ""),
                             createdAt = o.optLong("createdAt", 0L),
                             updatedAt = o.optLong("updatedAt", 0L),
+                            textSize = o.optString("textSize", "m"),
+                            textColor = o.optString("textColor", "dark"),
                         )
                     )
                 }
@@ -124,6 +130,8 @@ object MemoStore {
                     .put("bg", m.bg)
                     .put("createdAt", m.createdAt)
                     .put("updatedAt", m.updatedAt)
+                    .put("textSize", m.textSize)
+                    .put("textColor", m.textColor)
             )
         }
         val tmp = File(context.filesDir, "$FILE.tmp")
@@ -133,8 +141,17 @@ object MemoStore {
 }
 
 object MemoFormat {
-    val COLORS = listOf("", "red", "yellow", "green", "blue")
-    private val COLOR_NAMES = mapOf("" to "色なし", "red" to "赤", "yellow" to "黄", "green" to "緑", "blue" to "青")
+    val COLORS = listOf("", "clear", "red", "yellow", "green", "blue")
+    private val COLOR_NAMES = mapOf(
+        "" to "色なし", "clear" to "透明", "red" to "赤", "yellow" to "黄", "green" to "緑", "blue" to "青"
+    )
+
+    /** Title and body sizes in sp for the sticky note. */
+    fun textSizes(key: String): Pair<Float, Float> = when (key) {
+        "s" -> 15f to 13f
+        "l" -> 22f to 20f
+        else -> 18f to 16f
+    }
     private val WEEKDAYS = arrayOf("日", "月", "火", "水", "木", "金", "土")
 
     fun colorName(key: String) = COLOR_NAMES[key] ?: "色なし"
@@ -152,20 +169,9 @@ object MemoFormat {
         "yellow" -> R.drawable.bg_note_yellow
         "green" -> R.drawable.bg_note_green
         "blue" -> R.drawable.bg_note_blue
+        "clear" -> R.drawable.bg_note_clear
         else -> R.drawable.bg_note_plain
     }
-
-    /** Translucent wash laid over a background photo so the text stays readable. */
-    fun noteOverlay(context: Context, key: String): Int = ContextCompat.getColor(
-        context,
-        when (key) {
-            "red" -> R.color.overlay_red
-            "yellow" -> R.color.overlay_yellow
-            "green" -> R.color.overlay_green
-            "blue" -> R.color.overlay_blue
-            else -> R.color.overlay_plain
-        }
-    )
 
     fun shortDate(ts: Long): String {
         val d = Calendar.getInstance().apply { timeInMillis = ts }
