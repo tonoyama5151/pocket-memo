@@ -70,8 +70,11 @@ class MemoAdapter(
         fun bind(memo: Memo) {
             val ctx = itemView.context
             tag.setBackgroundColor(MemoFormat.tagColor(ctx, memo.color) ?: Color.TRANSPARENT)
-            title.text = memo.title.ifEmpty { "（タイトルなし）" }
+            val heading = memo.title.trim()
+            title.text = heading
+            title.visibility = if (heading.isEmpty()) View.GONE else View.VISIBLE
             preview.text = memo.preview
+            preview.maxLines = if (heading.isEmpty()) 3 else 2
             preview.visibility = if (memo.preview.isEmpty()) View.GONE else View.VISIBLE
             date.text = MemoFormat.shortDate(memo.updatedAt)
             pinMark.visibility = if (memo.pinned) View.VISIBLE else View.GONE

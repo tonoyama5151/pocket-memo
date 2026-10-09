@@ -24,7 +24,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         setContentView(R.layout.activity_widget_config)
 
         val memos = MemoStore.all(this)
-            .filter { it.text.isNotBlank() }
+            .filter { !it.isEmpty }
             .sortedByDescending { it.updatedAt }
         val adapter = MemoAdapter(showSections = false) { memo -> choose(memo.id) }
         val list = findViewById<RecyclerView>(R.id.configList)
@@ -34,7 +34,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         findViewById<View>(R.id.configEmpty).visibility = if (memos.isEmpty()) View.VISIBLE else View.GONE
 
         findViewById<MaterialButton>(R.id.configNew).setOnClickListener {
-            val memo = Memo.create().apply { text = "新しい付箋\n" }
+            val memo = Memo.create().apply { title = "新しい付箋" }
             MemoStore.save(this, memo)
             choose(memo.id)
             startActivity(EditorActivity.intent(this, memo.id))

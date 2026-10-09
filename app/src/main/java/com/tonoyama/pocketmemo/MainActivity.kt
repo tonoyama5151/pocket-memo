@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             startActivity(EditorActivity.intent(this, null))
         }
+        // Redraw sticky notes so they pick up any change in how they look after an update.
+        StickyWidget.updateAll(this)
     }
 
     override fun onResume() {
@@ -41,10 +43,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun refresh() {
         val all = MemoStore.all(this)
-            .filter { it.text.isNotBlank() }
+            .filter { !it.isEmpty }
             .sortedByDescending { it.updatedAt }
         val q = query.trim().lowercase()
-        val shown = if (q.isEmpty()) all else all.filter { it.text.lowercase().contains(q) }
+        val shown = if (q.isEmpty()) all else all.filter { "${it.title}\n${it.text}".lowercase().contains(q) }
         adapter.submit(shown)
 
         findViewById<View>(R.id.empty).visibility = if (all.isEmpty()) View.VISIBLE else View.GONE

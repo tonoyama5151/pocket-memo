@@ -10,27 +10,35 @@ import java.util.UUID
 
 data class Memo(
     val id: String,
+    var title: String,
     var text: String,
     var color: String,
     var pinned: Boolean,
+    /** File name of the background image in app storage, or "" for none. */
+    var bg: String,
     val createdAt: Long,
     var updatedAt: Long,
 ) {
-    val title: String
-        get() = text.trim().lineSequence().firstOrNull()?.trim().orEmpty()
+    /** A memo with neither title nor body is not kept. */
+    val isEmpty: Boolean
+        get() = title.isBlank() && text.isBlank()
 
-    /** Everything after the first line, joined into one line for list previews. */
+    /** Body joined into one line for list previews. */
     val preview: String
-        get() = text.trim().lines().drop(1).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" ")
+        get() = text.trim().lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" ")
 
-    /** Everything after the first line with line breaks kept, for the sticky note widget. */
+    /** Body with line breaks kept, for the sticky note widget. */
     val body: String
-        get() = text.trim().lines().drop(1).joinToString("\n").trim()
+        get() = text.trim()
 
     companion object {
         fun create(): Memo {
             val now = System.currentTimeMillis()
-            return Memo("m" + UUID.randomUUID().toString().replace("-", "").take(12), "", "", false, now, now)
+            return Memo(
+                id = "m" + UUID.randomUUID().toString().replace("-", "").take(12),
+                title = "", text = "", color = "", pinned = false, bg = "",
+                createdAt = now, updatedAt = now,
+            )
         }
     }
 }
@@ -57,7 +65,10 @@ object MemoStore {
     @Synchronized
     fun delete(context: Context, id: String) {
         val list = load(context)
-        if (list.removeAll { it.id == id }) write(context, list)
+        val memo = list.firstOrNull { it.id == id } ?: return
+        MemoImages.delete(context, memo.bg)
+        list.remove(memo)
+        write(context, list)
     }
 
     private fun load(context: Context): MutableList<Memo> {
@@ -69,12 +80,23 @@ object MemoStore {
                 val arr = JSONArray(file.readText())
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
+                    var title = o.optString("title", "")
+                    var text = o.optString("text", "")
+                    if (!o.has("title")) {
+                        // Version 1.1 kept the title as the first line of the text.
+                        val trimmed = text.trim()
+                        val cut = trimmed.indexOf('\n')
+                        title = if (cut < 0) trimmed else trimmed.substring(0, cut).trim()
+                        text = if (cut < 0) "" else trimmed.substring(cut + 1).trim()
+                    }
                     list.add(
                         Memo(
                             id = o.getString("id"),
-                            text = o.optString("text", ""),
+                            title = title,
+                            text = text,
                             color = o.optString("color", ""),
                             pinned = o.optBoolean("pinned", false),
+                            bg = o.optString("bg", ""),
                             createdAt = o.optLong("createdAt", 0L),
                             updatedAt = o.optLong("updatedAt", 0L),
                         )
@@ -95,9 +117,11 @@ object MemoStore {
             arr.put(
                 JSONObject()
                     .put("id", m.id)
+                    .put("title", m.title)
                     .put("text", m.text)
                     .put("color", m.color)
                     .put("pinned", m.pinned)
+                    .put("bg", m.bg)
                     .put("createdAt", m.createdAt)
                     .put("updatedAt", m.updatedAt)
             )
@@ -130,6 +154,18 @@ object MemoFormat {
         "blue" -> R.drawable.bg_note_blue
         else -> R.drawable.bg_note_plain
     }
+
+    /** Translucent wash laid over a background photo so the text stays readable. */
+    fun noteOverlay(context: Context, key: String): Int = ContextCompat.getColor(
+        context,
+        when (key) {
+            "red" -> R.color.overlay_red
+            "yellow" -> R.color.overlay_yellow
+            "green" -> R.color.overlay_green
+            "blue" -> R.color.overlay_blue
+            else -> R.color.overlay_plain
+        }
+    )
 
     fun shortDate(ts: Long): String {
         val d = Calendar.getInstance().apply { timeInMillis = ts }

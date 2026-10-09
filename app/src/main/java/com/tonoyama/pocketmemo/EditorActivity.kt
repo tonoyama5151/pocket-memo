@@ -15,12 +15,16 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class EditorActivity : AppCompatActivity() {
@@ -35,13 +39,41 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private lateinit var memo: Memo
-    private lateinit var textView: EditText
+    private lateinit var titleInput: EditText
+    private lateinit var textInput: EditText
     private lateinit var meta: TextView
     private lateinit var pinButton: ImageButton
+    private lateinit var bgThumb: ImageView
+    private lateinit var bgPick: MaterialButton
+    private lateinit var bgRemove: MaterialButton
     private val dots = mutableListOf<Pair<String, View>>()
     private var deleted = false
     private val handler = Handler(Looper.getMainLooper())
     private val saveRunnable = Runnable { saveNow(final = false) }
+
+    private val pickImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null || !::memo.isInitialized) return@registerForActivityResult
+        val appContext = applicationContext
+        val memoId = memo.id
+        bgPick.isEnabled = false
+        Thread {
+            val name = MemoImages.importImage(appContext, uri, memoId)
+            runOnUiThread {
+                bgPick.isEnabled = true
+                if (name == null) {
+                    Toast.makeText(this, "画像を読み込めませんでした", Toast.LENGTH_SHORT).show()
+                } else {
+                    val old = memo.bg
+                    memo.bg = name
+                    memo.updatedAt = System.currentTimeMillis()
+                    saveNow(final = false)
+                    MemoImages.delete(this, old)
+                    updateBackgroundRow()
+                    updateMeta()
+                }
+            }
+        }.start()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,25 +87,33 @@ class EditorActivity : AppCompatActivity() {
         memo = existing ?: Memo.create()
         setContentView(R.layout.activity_editor)
 
-        textView = findViewById(R.id.text)
+        titleInput = findViewById(R.id.titleInput)
+        textInput = findViewById(R.id.text)
         meta = findViewById(R.id.meta)
         pinButton = findViewById(R.id.pin)
+        bgThumb = findViewById(R.id.bgThumb)
+        bgPick = findViewById(R.id.bgPick)
+        bgRemove = findViewById(R.id.bgRemove)
 
-        textView.setText(memo.text)
+        titleInput.setText(memo.title)
+        textInput.setText(memo.text)
         if (existing == null) {
-            textView.requestFocus()
+            titleInput.requestFocus()
             window.setSoftInputMode(
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             )
         }
-        textView.doAfterTextChanged {
+        titleInput.doAfterTextChanged {
+            val value = it?.toString().orEmpty().replace("\n", " ")
+            if (value == memo.title) return@doAfterTextChanged
+            memo.title = value
+            onEdited()
+        }
+        textInput.doAfterTextChanged {
             val value = it?.toString().orEmpty()
             if (value == memo.text) return@doAfterTextChanged
             memo.text = value
-            memo.updatedAt = System.currentTimeMillis()
-            updateMeta()
-            handler.removeCallbacks(saveRunnable)
-            handler.postDelayed(saveRunnable, 600)
+            onEdited()
         }
 
         findViewById<ImageButton>(R.id.back).setOnClickListener { finish() }
@@ -86,9 +126,28 @@ class EditorActivity : AppCompatActivity() {
         }
         findViewById<ImageButton>(R.id.sticky).setOnClickListener { pinToHomeScreen() }
         findViewById<ImageButton>(R.id.delete).setOnClickListener { confirmDelete() }
+        bgPick.setOnClickListener {
+            pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+        bgRemove.setOnClickListener {
+            MemoImages.delete(this, memo.bg)
+            memo.bg = ""
+            memo.updatedAt = System.currentTimeMillis()
+            saveNow(final = false)
+            updateBackgroundRow()
+            updateMeta()
+        }
 
         buildColorDots()
+        updateBackgroundRow()
         updateMeta()
+    }
+
+    private fun onEdited() {
+        memo.updatedAt = System.currentTimeMillis()
+        updateMeta()
+        handler.removeCallbacks(saveRunnable)
+        handler.postDelayed(saveRunnable, 600)
     }
 
     private fun buildColorDots() {
@@ -97,7 +156,7 @@ class EditorActivity : AppCompatActivity() {
             text = "色"
             setTextColor(ContextCompat.getColor(this@EditorActivity, R.color.ink_soft))
             textSize = 13f
-            setPadding(0, 0, dp(10), 0)
+            minWidth = dp(40)
         }
         row.addView(label)
         MemoFormat.COLORS.forEach { key ->
@@ -112,14 +171,34 @@ class EditorActivity : AppCompatActivity() {
                     saveNow(final = false)
                 }
             }
-            val lp = LinearLayout.LayoutParams(dp(32), dp(32)).apply { marginEnd = dp(10) }
+            val lp = LinearLayout.LayoutParams(dp(32), dp(32)).apply {
+                marginEnd = dp(10)
+                topMargin = dp(6)
+                bottomMargin = dp(6)
+            }
             row.addView(dot, lp)
             dots.add(key to dot)
         }
     }
 
+    private fun updateBackgroundRow() {
+        val bitmap = MemoImages.load(this, memo.bg)
+        if (bitmap != null) {
+            bgThumb.setImageBitmap(bitmap)
+            bgThumb.visibility = View.VISIBLE
+            bgPick.text = "変更"
+            bgRemove.visibility = View.VISIBLE
+        } else {
+            bgThumb.setImageDrawable(null)
+            bgThumb.visibility = View.GONE
+            bgPick.text = "画像を選ぶ"
+            bgRemove.visibility = View.GONE
+        }
+    }
+
     private fun updateMeta() {
-        meta.text = "${MemoFormat.longDate(memo.updatedAt)} 更新 · ${MemoFormat.charCount(memo.text)}文字"
+        val chars = MemoFormat.charCount(memo.title) + MemoFormat.charCount(memo.text)
+        meta.text = "${MemoFormat.longDate(memo.updatedAt)} 更新 · ${chars}文字"
         val accent = ContextCompat.getColor(this, R.color.ai)
         val soft = ContextCompat.getColor(this, R.color.ink_soft)
         pinButton.imageTintList = ColorStateList.valueOf(if (memo.pinned) accent else soft)
@@ -140,13 +219,17 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    /** Saves the memo. Blank memos are only removed when leaving the editor. */
+    /** Saves the memo. Empty memos are only removed when leaving the editor. */
     private fun saveNow(final: Boolean) {
         if (deleted) return
-        if (memo.text.isBlank()) {
-            if (final && MemoStore.get(this, memo.id) != null) {
-                MemoStore.delete(this, memo.id)
-                StickyWidget.updateAll(this)
+        if (memo.isEmpty) {
+            if (final) {
+                if (MemoStore.get(this, memo.id) != null) {
+                    MemoStore.delete(this, memo.id)
+                    StickyWidget.updateAll(this)
+                } else {
+                    MemoImages.delete(this, memo.bg)
+                }
             }
             return
         }
@@ -155,8 +238,8 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun pinToHomeScreen() {
-        if (memo.text.isBlank()) {
-            Toast.makeText(this, "先にメモを書いてください", Toast.LENGTH_SHORT).show()
+        if (memo.isEmpty) {
+            Toast.makeText(this, "先にタイトルか本文を書いてください", Toast.LENGTH_SHORT).show()
             return
         }
         saveNow(final = false)
@@ -179,7 +262,7 @@ class EditorActivity : AppCompatActivity() {
             .setPositiveButton("削除する") { _, _ ->
                 handler.removeCallbacks(saveRunnable)
                 deleted = true
-                MemoStore.delete(this, memo.id)
+                if (MemoStore.get(this, memo.id) != null) MemoStore.delete(this, memo.id) else MemoImages.delete(this, memo.bg)
                 StickyWidget.updateAll(this)
                 Toast.makeText(this, "削除しました", Toast.LENGTH_SHORT).show()
                 finish()

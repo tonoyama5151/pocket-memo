@@ -56,16 +56,6 @@
             app:tint="@color/ink_soft" />
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/colors"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp" />
-
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="match_parent"
@@ -73,29 +63,112 @@
         android:layout_weight="1"
         android:fillViewport="true">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingBottom="16dp">
 
-            <EditText
-                android:id="@+id/text"
+            <LinearLayout
+                android:id="@+id/colors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="40dp"
+                    android:text="背景"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="13sp" />
+
+                <ImageView
+                    android:id="@+id/bgThumb"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="4dp"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/bgPick"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="画像を選ぶ" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/bgRemove"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="外す"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_sheet"
-                android:gravity="top|start"
-                android:hint="@string/editor_hint"
-                android:importantForAutofill="no"
-                android:inputType="textMultiLine|textCapSentences"
-                android:lineSpacingMultiplier="1.3"
-                android:minHeight="320dp"
-                android:padding="16dp"
-                android:textColor="@color/ink"
-                android:textColorHint="@color/ink_soft"
-                android:textSize="17sp" />
-        </FrameLayout>
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/titleInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="タイトル（空欄でもOK）"
+                    android:imeOptions="actionNext"
+                    android:importantForAutofill="no"
+                    android:inputType="text|textCapSentences"
+                    android:maxLines="2"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="10dp"
+                    android:textColor="@color/ink"
+                    android:textColorHint="@color/ink_soft"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@color/rule" />
+
+                <EditText
+                    android:id="@+id/text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:gravity="top|start"
+                    android:hint="メモを書く"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:lineSpacingMultiplier="1.3"
+                    android:minHeight="280dp"
+                    android:padding="16dp"
+                    android:textColor="@color/ink"
+                    android:textColorHint="@color/ink_soft"
+                    android:textSize="17sp" />
+            </LinearLayout>
+        </LinearLayout>
     </ScrollView>
 
     <TextView
