@@ -90,7 +90,6 @@ class StickyWidget : AppWidgetProvider() {
 
             views.setViewVisibility(R.id.w_list, View.GONE)
             views.setViewVisibility(R.id.w_open, View.GONE)
-            views.setViewVisibility(R.id.w_header, View.VISIBLE)
             if (memo != null && memo.inTrash) {
                 views.setInt(ROOT, "setBackgroundResource", R.drawable.bg_note_plain)
                 views.setViewVisibility(R.id.w_bg, View.GONE)
@@ -146,7 +145,7 @@ class StickyWidget : AppWidgetProvider() {
                     views.setInt(R.id.w_open, "setColorFilter", textColor)
                     views.setOnClickPendingIntent(R.id.w_open, open)
                 }
-                views.setViewVisibility(R.id.w_header, if (title.isEmpty() && !listShown) View.GONE else View.VISIBLE)
+
             } else {
                 views.setInt(ROOT, "setBackgroundResource", R.drawable.bg_note_plain)
                 views.setViewVisibility(R.id.w_bg, View.GONE)
