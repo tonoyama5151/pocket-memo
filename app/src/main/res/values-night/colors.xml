@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#FF11151C</color>
+    <color name="sheet">#FF191F28</color>
+    <color name="ink">#FFE5EAF1</color>
+    <color name="ink_soft">#FF97A3B4</color>
+    <color name="rule">#FF2A323E</color>
+    <color name="ai">#FF93B1F0</color>
+    <color name="ai_soft">#FF1F2C45</color>
+    <color name="on_ai">#FF0E1524</color>
+    <color name="danger">#FFF0948B</color>
+
+    <color name="tag_red">#FFE57A70</color>
+    <color name="tag_yellow">#FFE8BE52</color>
+    <color name="tag_green">#FF63B783</color>
+    <color name="tag_blue">#FF7AA1EC</color>
+</resources>

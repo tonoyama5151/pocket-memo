@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="paper">#FFEEF2F6</color>
+    <color name="sheet">#FFFFFFFF</color>
+    <color name="ink">#FF1C2330</color>
+    <color name="ink_soft">#FF586477</color>
+    <color name="rule">#FFD7DEE7</color>
+    <color name="ai">#FF24427F</color>
+    <color name="ai_soft">#FFE2E9F6</color>
+    <color name="on_ai">#FFFFFFFF</color>
+    <color name="danger">#FFA8322A</color>
+
+    <color name="tag_red">#FFD2564B</color>
+    <color name="tag_yellow">#FFD8A21E</color>
+    <color name="tag_green">#FF3C8F5A</color>
+    <color name="tag_blue">#FF3B6FD0</color>
+
+    <!-- Sticky note widget: always paper-like, same in both themes -->
+    <color name="note_plain">#FFFFF3B8</color>
+    <color name="note_red">#FFF9D3CE</color>
+    <color name="note_yellow">#FFFFE27A</color>
+    <color name="note_green">#FFCFEBD6</color>
+    <color name="note_blue">#FFD3E1F7</color>
+    <color name="note_ink">#FF2A2A2A</color>
+    <color name="note_ink_soft">#FF5A5A5A</color>
+
+    <color name="launcher_bg">#FF24427F</color>
+</resources>

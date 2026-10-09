@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ポケットメモ</string>
+    <string name="search_hint">メモを検索</string>
+    <string name="new_memo">新しいメモ</string>
+    <string name="empty_title">最初のメモを書きましょう</string>
+    <string name="empty_body">右下のペンボタンを押すと新しいメモが開きます。入力した内容は自動で保存されます。</string>
+    <string name="editor_hint">ここにメモを書く（1行目がタイトルになります）</string>
+    <string name="back">一覧に戻る</string>
+    <string name="pin">ピン留め</string>
+    <string name="to_widget">付箋としてホーム画面に貼る</string>
+    <string name="delete">削除</string>
+    <string name="widget_name">付箋メモ</string>
+    <string name="widget_desc">選んだメモを付箋のようにホーム画面に表示します</string>
+    <string name="widget_pick_title">付箋にするメモを選ぶ</string>
+    <string name="widget_new">新しいメモを書いて貼る</string>
+    <string name="widget_no_memos">まだメモがありません。下のボタンから新しいメモを書けます。</string>
+</resources>

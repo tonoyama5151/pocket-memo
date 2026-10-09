@@ -1,0 +1,60 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build APK
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle :app:assembleRelease -PversionCode=${{ github.run_number }} --no-daemon 2>&1 | tee build.log
+
+      - name: Save failure log to the ci-log branch
+        if: failure()
+        shell: bash
+        run: |
+          grep -nE "^e: |error:|FAILURE|What went wrong|Exception" -A4 build.log | head -n 250 > /tmp/ci-summary.txt || true
+          tail -n 400 build.log > /tmp/ci-tail.txt || true
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan ci-log
+          git rm -r -q --cached .
+          cp /tmp/ci-summary.txt ci-summary.txt
+          cp /tmp/ci-tail.txt ci-tail.txt
+          git add ci-summary.txt ci-tail.txt
+          git commit -q -m "Build log for run ${{ github.run_number }}"
+          git push -f origin ci-log
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk pocket-memo.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.${{ github.run_number }}
+          name: ポケットメモ 1.${{ github.run_number }}
+          files: pocket-memo.apk
+          make_latest: "true"
+          body: |
+            スマホでこのページを開き、下の pocket-memo.apk をタップしてダウンロード・インストールしてください。
+            更新するときは、新しい版をそのまま上書きインストールすればメモは残ります。
