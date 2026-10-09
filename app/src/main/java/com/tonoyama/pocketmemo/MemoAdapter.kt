@@ -27,7 +27,7 @@ class MemoAdapter(
         val rest = memos.filter { !it.pinned }
         val out = mutableListOf<Item>()
         if (showSections && pinned.isNotEmpty()) {
-            out.add(Item.Header("ピン留め"))
+            out.add(Item.Header("固定"))
             pinned.forEach { out.add(Item.Row(it)) }
             if (rest.isNotEmpty()) out.add(Item.Header("すべてのメモ"))
             rest.forEach { out.add(Item.Row(it)) }

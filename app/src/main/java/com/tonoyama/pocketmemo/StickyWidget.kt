@@ -89,6 +89,8 @@ class StickyWidget : AppWidgetProvider() {
             val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
             views.setViewVisibility(R.id.w_list, View.GONE)
+            views.setViewVisibility(R.id.w_open, View.GONE)
+            views.setViewVisibility(R.id.w_header, View.VISIBLE)
             if (memo != null && memo.inTrash) {
                 views.setInt(ROOT, "setBackgroundResource", R.drawable.bg_note_plain)
                 views.setViewVisibility(R.id.w_bg, View.GONE)
@@ -135,6 +137,16 @@ class StickyWidget : AppWidgetProvider() {
                     .addNextIntentWithParentStack(EditorActivity.intent(context, memo.id))
                     .getPendingIntent(widgetId, flags)
                 views.setOnClickPendingIntent(ROOT, open)
+                views.setOnClickPendingIntent(R.id.w_title, open)
+                // A checklist fills the note with tickable rows, so it gets its own "open" button.
+                val listShown = memo.isChecklist && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    memo.items.any { it.text.isNotBlank() }
+                if (listShown) {
+                    views.setViewVisibility(R.id.w_open, View.VISIBLE)
+                    views.setInt(R.id.w_open, "setColorFilter", textColor)
+                    views.setOnClickPendingIntent(R.id.w_open, open)
+                }
+                views.setViewVisibility(R.id.w_header, if (title.isEmpty() && !listShown) View.GONE else View.VISIBLE)
             } else {
                 views.setInt(ROOT, "setBackgroundResource", R.drawable.bg_note_plain)
                 views.setViewVisibility(R.id.w_bg, View.GONE)

@@ -7,7 +7,7 @@
     <string name="empty_body">右下のペンボタンを押すと新しいメモが開きます。入力した内容は自動で保存されます。</string>
     <string name="editor_hint">ここにメモを書く（1行目がタイトルになります）</string>
     <string name="back">一覧に戻る</string>
-    <string name="pin">ピン留め</string>
+    <string name="pin">固定する</string>
     <string name="to_widget">付箋としてホーム画面に貼る</string>
     <string name="delete">削除</string>
     <string name="widget_name">付箋メモ</string>

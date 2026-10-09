@@ -136,7 +136,7 @@ class EditorActivity : AppCompatActivity() {
             memo.updatedAt = System.currentTimeMillis()
             updateMeta()
             saveNow(final = false)
-            Toast.makeText(this, if (memo.pinned) "ピン留めしました" else "ピン留めを外しました", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (memo.pinned) "固定しました" else "固定を外しました", Toast.LENGTH_SHORT).show()
         }
         findViewById<ImageButton>(R.id.sticky).setOnClickListener { pinToHomeScreen() }
         val more = findViewById<ImageButton>(R.id.more)
@@ -282,7 +282,6 @@ class EditorActivity : AppCompatActivity() {
         menu.menu.add(0, 1, 0, "テキストをコピー")
         menu.menu.add(0, 2, 1, "複製を作る")
         menu.menu.add(0, 3, 2, "共有")
-        menu.menu.add(0, 4, 3, "ゴミ箱に移す")
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> MemoActions.copyText(this, memo)
@@ -296,7 +295,6 @@ class EditorActivity : AppCompatActivity() {
                     }
                 }
                 3 -> MemoActions.share(this, memo)
-                4 -> confirmDelete()
             }
             true
         }
@@ -527,7 +525,7 @@ class EditorActivity : AppCompatActivity() {
         val accent = ContextCompat.getColor(this, R.color.ai)
         val soft = ContextCompat.getColor(this, R.color.ink_soft)
         pinButton.imageTintList = ColorStateList.valueOf(if (memo.pinned) accent else soft)
-        pinButton.contentDescription = if (memo.pinned) "ピン留めを外す" else "ピン留め"
+        pinButton.contentDescription = if (memo.pinned) "固定を外す" else "固定する"
 
         val ink = ContextCompat.getColor(this, R.color.ink)
         val rule = ContextCompat.getColor(this, R.color.rule)
